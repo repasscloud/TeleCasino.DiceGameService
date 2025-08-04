@@ -1,21 +1,20 @@
-# TeleCasino Keno Game
+# TeleCasino Dice Game
 
-A command-line Keno game animation and result generator built with .NET.  
-Users pick 7–15 numbers (1–80), place a wager ($1, $2, or $5), and receive an animated video of the draw, plus a JSON summary.
+[![Build and Test DiceGameService](https://github.com/repasscloud/TeleCasino.DiceGameService/actions/workflows/test-dice-api.yml/badge.svg)](https://github.com/repasscloud/TeleCasino.DiceGameService/actions/workflows/test-dice-api.yml)
+[![🚀 Publish TeleCasino.KenoGameService (linux-x64)](https://github.com/repasscloud/TeleCasino.DiceGameService/actions/workflows/docker-image.yml/badge.svg)](https://github.com/repasscloud/TeleCasino.DiceGameService/actions/workflows/docker-image.yml)
 
----
+A command-line Dice game animation and result generator built with .NET and ASP.NET API.  
+Users place bets (Odd, Even, Over7, Under7, Pair, or exact sum) with a wager ($1, $2, or $5) and receive an animated video of the dice roll, plus a JSON summary.
 
 ## Features
 
-- **Animated draw**:  
-  1. **Flash** the 20 drawn balls in random order on a dark-gray background  
-  2. **Reveal** them on a felt-green background  
-  3. **Highlight** hits (crimson) vs. misses (sea-green)  
-  4. **Summary grid** (5×4) of all drawn balls on black, with white circles around the player’s picks  
-- **JSON output**: Detailed result including wager, picks, drawn numbers, hits, payout, net gain, video file.  
-- **House edge**: Pays 95% of the fair odds.
-
----
+- **Animated roll**:  
+  1. **Frame-by-frame** dice roll animation using SVG assets  
+  2. **Cryptographically secure randomness** for fair rolls  
+  3. **Video generation** via ffmpeg  
+  4. **Result file** (MP4) served from API `wwwroot`  
+- **JSON output**: Detailed result including wager, bet type, sum, win/loss, payout, net gain, video file.  
+- **House edge**: Pays 95% of fair odds.
 
 ## Installation
 
@@ -26,12 +25,10 @@ Users pick 7–15 numbers (1–80), place a wager ($1, $2, or $5), and receive a
    ```bash
    dotnet add package SkiaSharp
    dotnet add package Svg.Skia
-   dotnet add package Newtonsoft.Json
+   dotnet add package NanoidDotNet
    ```
 
-4. Place your `ball1.svg` … `ball80.svg` files in the `images/` directory.
-
----
+4. Place your `die1.svg` … `die6.svg` files in `/shared/Dice/images/`.
 
 ## Build & Publish
 
@@ -42,88 +39,57 @@ dotnet clean
 dotnet restore
 dotnet publish -c Release
 
-# The single-file, self-contained binary will be in:
-#   bin/Release/net9.0/<RID>/publish/TeleCasino.KenoGame
+# The build output will be in:
+#   bin/Release/net9.0/<RID>/publish/
 ```
 
----
+## API Usage
 
-## Usage
+Endpoint: `POST /api/Dice/play`
 
-```bash
-TeleCasino.KenoGame <SpinId> <Wager> --bet <n1,n2,...> [--json]
-```
+### Query Parameters
 
-- `<SpinId>`: Unique identifier used for output filenames (`<SpinId>.mp4` and `<SpinId>.json`).  
-- `<Wager>`: Must be 1, 2, or 5.  
-- `--bet <n1,n2,...>`: Comma-separated picks, exactly 7–15 unique integers between 1 and 80.  
-- `--json` (optional): Print the JSON summary to console.
+- `wager` (int): Amount wagered ($1, $2, or $5).  
+- `betArg` (string): One of "Odd", "Even", "Over7", "Under7", "Pair3", "Pair4", ..., or exact sum (e.g., "7", "11").  
+- `gameSessionId` (int): Session identifier.
 
 ### Example
 
 ```bash
-TeleCasino.KenoGame abc123 5 --bet 8,4,16,10,22,7 --json
+curl -X 'POST' 'http://localhost:8080/api/Dice/play?wager=1&betArg=Odd&gameSessionId=221' -H 'accept: application/json' -d ''
 ```
 
-- Generates `abc123.mp4` (video) and `abc123.json`:
+Example response:
 
 ```json
 {
-  "SpinId": "abc123",
-  "Wager": 5,
-  "PlayerNumbers": [8,4,16,10,22,7],
-  "DrawnNumbers": [...20 numbers...],
-  "Hits": 4,
-  "Payout": 33.25,
-  "NetGain": 28.25,
-  "VideoFile": "abc123.mp4"
+  "id": "abc123xyz",
+  "wager": 1,
+  "payout": 1.9,
+  "netGain": 0.9,
+  "videoFile": "abc123xyz.mp4",
+  "win": true,
+  "betType": "Odd",
+  "dieSum": 9,
+  "gameSessionId": 221
 }
 ```
 
----
+The generated video is accessible at:
+
+```url
+http://localhost:8080/abc123xyz.mp4
+```
 
 ## Rules & Parameters
 
-- **Pick count**: 7–15 numbers out of 80.  
-- **Draw count**: 20 balls.  
-- **Minimum hits for payout**: 4 hits (otherwise payout = 0).  
-- **House edge**: 5% (pays 95% of fair odds).  
-
----
-
-## Payout Formula
-
-Let:
-
-- \(k\) = number of picks  
-- \(h\) = number of hits  
-- total draw = 20  
-
-1. **Probability of exactly _h_ hits**  
-   $$
-   P(h) \;=\; \frac{\binom{k}{h}\,\binom{80 - k}{20 - h}}{\binom{80}{20}}
-   $$
-
-2. **Fair odds** (the true “x : 1” payout for _h_ hits)  
-   $$
-   \text{fairOdds}
-   = \frac{1}{P(h)} \;-\; 1
-   $$
-
-3. **House‑adjusted multiplier** (e.g. 5 % edge)  
-   $$
-   \text{multi}
-   = \text{fairOdds} \;\times\; 0.95
-   $$
-
-4. **Compute payout and net gain**  
-   $$
-   \text{Payout} = \text{Wager} \;\times\; \text{multi}, 
-   \quad
-   \text{NetGain} = \text{Payout} \;-\; \text{Wager}
-   $$
-
----
+- **Dice roll**: Two fair 6-sided dice (cryptographic RNG).  
+- **Bet types**:
+  - **Odd/Even**: Win if sum is odd/even (pays 1.9×).  
+  - **Over7/Under7**: Win if sum is >7 or <7 (pays 1.9×).  
+  - **PairX**: Win if both dice match value X (pays higher).  
+  - **Exact sum (2–12)**: Win if sum matches (pays variable odds).  
+- **House edge**: 5% reduction on fair odds.
 
 ## License
 
