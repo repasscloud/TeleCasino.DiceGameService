@@ -2,6 +2,7 @@
 
 [![Build and Test DiceGameService](https://github.com/repasscloud/TeleCasino.DiceGameService/actions/workflows/test-dice-api.yml/badge.svg)](https://github.com/repasscloud/TeleCasino.DiceGameService/actions/workflows/test-dice-api.yml)
 [![🚀 Publish TeleCasino.KenoGameService (linux-x64)](https://github.com/repasscloud/TeleCasino.DiceGameService/actions/workflows/docker-image.yml/badge.svg)](https://github.com/repasscloud/TeleCasino.DiceGameService/actions/workflows/docker-image.yml)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/repasscloud/TeleCasino.DiceGameService?label=version)
 
 A command-line Dice game animation and result generator built with .NET and ASP.NET API.  
 Users place bets (Odd, Even, Over7, Under7, Pair, or exact sum) with a wager ($1, $2, or $5) and receive an animated video of the dice roll, plus a JSON summary.
