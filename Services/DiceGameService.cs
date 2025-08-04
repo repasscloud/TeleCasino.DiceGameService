@@ -70,9 +70,9 @@ public class DiceGameService : IDiceGameService
 
         // Assemble video
         var ffArgs = $"-y -framerate 10 -i {framesDir}/frame_%03d.png " +
-                          "-c:v libx264 -preset fast -pix_fmt yuv420p " +
-                          "-movflags +faststart " +
-                          videoFile;
+                        "-c:v libx264 -preset fast -pix_fmt yuv420p " +
+                        "-movflags +faststart " +
+                        videoFile;
         var psi = new ProcessStartInfo("ffmpeg", ffArgs)
         {
             RedirectStandardOutput = true,
