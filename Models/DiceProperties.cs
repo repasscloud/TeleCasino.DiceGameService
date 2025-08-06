@@ -1,5 +1,3 @@
-using System.Security.Cryptography.X509Certificates;
-
 namespace TeleCasino.DiceGameService.Models;
 
 public static class DiceProperties
