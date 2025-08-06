@@ -6,7 +6,19 @@ BET_ARG="Odd"
 
 echo "🎲 Testing Dice API endpoint..."
 curl -v -X POST \
+  "$API_URL/api/Dice/play?wager=0.05&betArg=$BET_ARG&gameSessionId=21" \
+  -H 'accept: text/plain' \
+  -H 'Content-Type: application/json' \
+  -d ''
+
+curl -v -X POST \
   "$API_URL/api/Dice/play?wager=5&betArg=$BET_ARG&gameSessionId=21" \
+  -H 'accept: text/plain' \
+  -H 'Content-Type: application/json' \
+  -d ''
+
+curl -v -X POST \
+  "$API_URL/api/Dice/play?wager=50.0&betArg=$BET_ARG&gameSessionId=21" \
   -H 'accept: text/plain' \
   -H 'Content-Type: application/json' \
   -d ''
