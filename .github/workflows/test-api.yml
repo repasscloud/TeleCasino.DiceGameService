@@ -46,3 +46,32 @@ jobs:
       - name: 🗑️ Remove container
         if: always()
         run: docker rm $GAME
+
+  create-and-merge-pr:
+    name: 🔀 Create & Merge PR (dev → main)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔀 Create Pull Request
+        id: cpr
+        uses: repo-sync/pull-request@v2
+        with:
+          source_branch: "dev"
+          destination_branch: "main"
+          github_token: ${{ secrets.NEW_PAT }}
+          pr_title: "🔀 Merge dev → main"
+          pr_body: "Automated PR to merge dev into main after successful tests."
+          pr_label: "auto-merge"
+
+      - name: ✅ Merge Pull Request
+        if: steps.cpr.outputs.pr_number != ''
+        run: |
+          gh pr merge ${{ steps.cpr.outputs.pr_number }} --merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.NEW_PAT }}

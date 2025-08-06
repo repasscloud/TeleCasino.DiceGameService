@@ -36,8 +36,9 @@ RUN apt update && apt -y install --no-install-recommends \
 
 COPY --from=build /app/publish .
 
-RUN mkdir -p /shared/Dice/images && mkdir -p /app/wwwroot
+RUN mkdir -p /shared/Dice/images && mkdir -p /app/wwwroot && mkdir -p /shared/Dice/sounds
 COPY Assets/DiceImages/* /shared/Dice/images/
+COPY Assets/DiceSounds/* /shared/Dice/sounds/
 
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=0
 ENV DOTNET_EnableDiagnostics=0
