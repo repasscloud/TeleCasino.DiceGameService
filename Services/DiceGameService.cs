@@ -18,6 +18,7 @@ public class DiceGameService : IDiceGameService
     private static readonly string _framesSubDir = "frames";
     private static readonly string _videosSubDir = "videos";
     private static readonly string _imagesSubDir = "images";
+    private static readonly string _soundsSubDir = "sounds";
 
 
     public DiceGameService(IConfiguration config)
@@ -26,7 +27,7 @@ public class DiceGameService : IDiceGameService
         _htmlDir = config["HtmlDir"] ?? "/app/wwwroot";
     }
 
-    public async Task<DiceResult> PlayGameAsync(int wager, string betArg, int gameSessionId)
+    public async Task<DiceResult> PlayGameAsync(decimal wager, string betArg, int gameSessionId)
     {
         if (!Enum.TryParse<DiceBetType>(betArg, out var betArgEnum))
             throw new Exception($"Unknown bet type '{betArg}'");
@@ -37,6 +38,7 @@ public class DiceGameService : IDiceGameService
         var videoFile = Path.Combine(videoDir, $"{diceResultId}.mp4");
         var framesDir = Path.Combine(diceSharedRootPath, diceResultId, _framesSubDir);
         var imagesDir = Path.Combine(diceSharedRootPath, _imagesSubDir);
+        var soundsDir = Path.Combine(diceSharedRootPath, _soundsSubDir);
 
         PrepareDirectory(framesDir);
         DeleteThisFile(videoFile);
@@ -54,6 +56,9 @@ public class DiceGameService : IDiceGameService
             svgAssets[face] = svg;
         }
 
+        // load assets
+        var soundFile = Path.Combine(soundsDir, "Ij76x_px8jo.mp3");
+
         // do the roll
         int d1 = RollDice();
         int d2 = RollDice();
@@ -68,11 +73,27 @@ public class DiceGameService : IDiceGameService
             DrawFrame(svgAssets, f1, f2, i, framesDir);
         }
 
+        // animation details
+        const int fps = 10;
+        const int frames = FrameCount;
+        const int minVideoLength = 11;
+
+        // calculate current video duration
+        double originalDuration = frames / (double)fps;
+        double padSeconds = Math.Max(0, minVideoLength - originalDuration);
+
         // Assemble video
-        var ffArgs = $"-y -framerate 10 -i {framesDir}/frame_%03d.png " +
-                        "-c:v libx264 -preset fast -pix_fmt yuv420p " +
+        var ffArgs = $"-y -framerate {fps} -i {framesDir}/frame_%03d.png " +
+                        $"-i {soundFile} " +
+                        $"-filter_complex \"[0:v]tpad=stop_mode=clone:stop_duration={padSeconds}[v]\" " +
+                        "-map \"[v]\" -map 1:a " +
+                        $"-t {minVideoLength} " +  // force at least 11 seconds total
+                        "-r 30 -c:v libx264 -preset fast -pix_fmt yuv420p " +
+                        "-c:a aac -b:a 128k " +
                         "-movflags +faststart " +
+                        "-f mp4 " +
                         videoFile;
+
         var psi = new ProcessStartInfo("ffmpeg", ffArgs)
         {
             RedirectStandardOutput = true,
@@ -104,7 +125,7 @@ public class DiceGameService : IDiceGameService
         decimal payout = isWin ? Math.Round(wager * odds, 2) : 0m;
         decimal netGain = Math.Round(payout - wager, 2);
 
-        File.Move(videoFile, Path.Combine("/app/wwwroot", Path.GetFileName(videoFile)), true);
+        File.Move(videoFile, Path.Combine(_htmlDir, Path.GetFileName(videoFile)), true);
         DeleteThisDirectory(Path.Combine(diceSharedRootPath, diceResultId));
 
         return new DiceResult
@@ -195,7 +216,7 @@ public class DiceGameService : IDiceGameService
 
         var framePath = Path.Combine(outDir, $"frame_{frameIndex:D3}.png");
         using var imgData = SKImage.FromBitmap(bmp)
-                                    .Encode(SKEncodedImageFormat.Png, 100);
+                                .Encode(SKEncodedImageFormat.Png, 100);
         using var fs = File.OpenWrite(framePath);
         imgData.SaveTo(fs);
     }

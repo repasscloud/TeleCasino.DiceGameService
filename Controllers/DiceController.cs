@@ -25,7 +25,7 @@ namespace TeleCasino.DiceGameApi.Controllers
         [ProducesResponseType(typeof(DiceResult), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PlayGame(
-            [FromQuery] int wager,
+            [FromQuery] decimal wager,
             [FromQuery] string betArg,
             [FromQuery] int gameSessionId)
         {
@@ -39,6 +39,11 @@ namespace TeleCasino.DiceGameApi.Controllers
             var validBets = DiceProperties.HouseOdds.Keys;
             if (!validBets.Contains(betArg, StringComparer.OrdinalIgnoreCase))
                 return BadRequest($"Invalid bet type '{betArg}'. Valid options are: {string.Join(", ", validBets)}");
+
+            // issue #2
+            var allowedWagers = new[] { 0.05m, 0.10m, 0.50m, 1.0m, 2.0m, 5.0m, 10m, 25m, 50m };
+            if (!allowedWagers.Contains(wager))
+                return BadRequest("Invalid wager amount. Allowed: 0.05, 0.10, 0.50, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0");
 
             try
             {
