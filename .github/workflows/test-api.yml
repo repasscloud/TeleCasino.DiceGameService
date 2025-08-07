@@ -75,3 +75,38 @@ jobs:
           gh pr merge ${{ steps.cpr.outputs.pr_number }} --merge
         env:
           GITHUB_TOKEN: ${{ secrets.NEW_PAT }}
+
+  check-and-tag-release:
+    name: 🏷️ Tag Release if Needed
+    needs: create-and-merge-pr
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for git tag to work
+
+      - name: 🧾 Read app_version
+        id: app_version
+        run: echo "value=$(head -n 1 app_version)" >> $GITHUB_OUTPUT
+
+      - name: 🔎 Get Latest GitHub Release
+        id: latest_release
+        run: |
+          # Get the redirect location for the latest release
+          latest_url=$(curl -sI https://github.com/repasscloud/TeleCasino.DiceGameService/releases/latest | grep -i location | awk '{print $2}' | tr -d '\r\n')
+          # Extract the version from the redirect URL
+          latest_version=$(basename "$latest_url" | sed 's/^v//')
+          echo "url=$latest_url" >> $GITHUB_OUTPUT
+          echo "version=$latest_version" >> $GITHUB_OUTPUT
+
+      - name: 🧠 Compare and Tag if Needed
+        if: steps.app_version.outputs.value != steps.latest_release.outputs.version
+        env:
+          APP_VERSION: ${{ steps.app_version.outputs.value }}
+        run: |
+          echo "Tagging new version v$APP_VERSION..."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$APP_VERSION" -m "v$APP_VERSION"
+          git push origin "v$APP_VERSION"
