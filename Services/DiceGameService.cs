@@ -36,8 +36,8 @@ public class DiceGameService : IDiceGameService
         var videoDir = Path.Combine(diceSharedRootPath, _videosSubDir);
         var videoFile = Path.Combine(videoDir, $"{diceResultId}.mp4");
         var framesDir = Path.Combine(diceSharedRootPath, diceResultId, _framesSubDir);
-        var imagesDir = Path.Combine(diceSharedRootPath, _imagesSubDir);
-        var soundsDir = Path.Combine(diceSharedRootPath, _soundsSubDir);
+        var imagesDir = Path.Combine(_sharedDir, "Dice", _imagesSubDir);
+        var soundsDir = Path.Combine(_sharedDir, "Dice", _soundsSubDir);
         
         PrepareDirectory(framesDir);
         DeleteThisFile(videoFile);
