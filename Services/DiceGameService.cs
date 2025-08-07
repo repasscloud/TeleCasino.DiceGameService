@@ -31,17 +31,17 @@ public class DiceGameService : IDiceGameService
         if (!Enum.TryParse<DiceBetType>(betArg, ignoreCase: true, out var betType))
             throw new Exception($"Unknown bet type '{betArg}'");
 
-        var resultId = await Nanoid.GenerateAsync();
-        var root = Path.Combine(_sharedDir, "Dice", resultId);
-        var framesDir = Path.Combine(root, _framesSubDir);
-        var videoDir = Path.Combine(root, _videosSubDir);
-        var videoPath = Path.Combine(videoDir, $"{resultId}.mp4");
-        var imagesDir = Path.Combine(_sharedDir, _imagesSubDir);
-        var soundsDir = Path.Combine(_sharedDir, _soundsSubDir);
-
+        var diceResultId = await Nanoid.GenerateAsync();
+        var diceSharedRootPath = Path.Combine(_sharedDir, "Dice", diceResultId);
+        var videoDir = Path.Combine(diceSharedRootPath, _videosSubDir);
+        var videoFile = Path.Combine(videoDir, $"{diceResultId}.mp4");
+        var framesDir = Path.Combine(diceSharedRootPath, diceResultId, _framesSubDir);
+        var imagesDir = Path.Combine(diceSharedRootPath, _imagesSubDir);
+        var soundsDir = Path.Combine(diceSharedRootPath, _soundsSubDir);
+        
         PrepareDirectory(framesDir);
+        DeleteThisFile(videoFile);
         PrepareDirectory(videoDir);
-        DeleteThisFile(videoPath);
 
         var svgs = LoadDiceSvgs(imagesDir);
         var soundFile = Path.Combine(soundsDir, "Ij76x_px8jo.mp3");
@@ -58,7 +58,7 @@ public class DiceGameService : IDiceGameService
             DrawFrame(svgs, f1, f2, i, framesDir);
         }
 
-        AssembleVideo(framesDir, soundFile, videoPath);
+        AssembleVideo(framesDir, soundFile, videoFile);
         Directory.Delete(framesDir, true);
 
         bool isWin = IsWinningRoll(betType, d1, d2, sum);
@@ -69,16 +69,16 @@ public class DiceGameService : IDiceGameService
         decimal payout = isWin ? Math.Round(wager * odds, 2) : 0m;
         decimal netGain = Math.Round(payout - wager, 2);
 
-        File.Move(videoPath, Path.Combine(_htmlDir, Path.GetFileName(videoPath)), true);
-        DeleteThisDirectory(root);
+        File.Move(videoFile, Path.Combine(_htmlDir, Path.GetFileName(videoFile)), true);
+        DeleteThisDirectory(diceSharedRootPath);
 
         return new DiceResult
         {
-            Id = resultId,
+            Id = diceResultId,
             Wager = wager,
             Payout = payout,
             NetGain = netGain,
-            VideoFile = Path.GetFileName(videoPath),
+            VideoFile = Path.GetFileName(videoFile),
             Win = isWin,
             BetType = betType,
             DieSum = sum,
