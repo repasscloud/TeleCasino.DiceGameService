@@ -113,5 +113,13 @@ jobs:
           echo "Tagging new version v$APP_VERSION..."
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "v$APP_VERSION" -m "v$APP_VERSION"
-          git push origin "v$APP_VERSION"
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.NEW_PAT }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/repasscloud/TeleCasino.DiceGameService/git/refs \
+            -d @- <<EOF
+          {
+            "ref": "refs/tags/v${APP_VERSION}",
+            "sha": "$(git rev-parse HEAD)"
+          }
+          EOF
