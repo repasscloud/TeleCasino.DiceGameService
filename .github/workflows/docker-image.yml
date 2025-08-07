@@ -1,4 +1,4 @@
-name: 🚀 Publish Docker Image (linux-x64) – Tag: ${{ github.ref_name }}
+name: 🚀 Publish Docker Image (linux-x64)
 
 on:
   push:
