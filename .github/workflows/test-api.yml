@@ -16,6 +16,11 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
+      - name: 🔍 Print context
+        run: |
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+
       - name: 🏗️ Build Docker image
         run: |
           docker build -t $GAME_NAME .
