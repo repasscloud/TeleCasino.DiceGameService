@@ -1,4 +1,4 @@
-name: 🚀 Publish Docker Container (linux-x64)
+name: 🚀 Publish Docker Image (linux-x64)
 
 on:
   push:
@@ -15,6 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: 🔍 Print context
+        run: |
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
 
       - name: 🔧 Set up Buildx
         uses: docker/setup-buildx-action@v3
