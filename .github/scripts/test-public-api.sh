@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Runs the full bet sweep 20 times, pretty-prints each JSON,
+# Runs the full bet sweep 100 times, pretty-prints each JSON,
 # and prints running totals of .wager and .netGain at the end,
 # plus house profit, customer loss %, and payout ratio.
 
@@ -9,25 +9,32 @@ betArgs=(
   Odd Even Under7 Over7 Pair1 Pair2 Pair3 Pair4 Pair5 Pair6
 )
 
+# Possible wager amounts
+wagerValues=(0.05 0.1 0.5 1 2 5 10 25 50)
+
 TOTAL_WAGER=0
 TOTAL_NET=0
 
 for round in $(seq 1 100); do
   echo -e "\n====================== Round ${round} ======================\n"
   for betArg in "${betArgs[@]}"; do
-    echo "🎯 Bet: $betArg"
+
+    # Pick a random wager from the list
+    wager=${wagerValues[$RANDOM % ${#wagerValues[@]}]}
+
+    echo "🎯 Bet: $betArg | 💵 Wager: $wager"
     resp=$(curl -s -X POST \
-      "http://170.64.191.107/dice/api/Dice/play?wager=5&betArg=${betArg}&gameSessionId=21")
+      "http://170.64.191.107/dice/api/Dice/play?wager=${wager}&betArg=${betArg}&gameSessionId=21")
 
     # Pretty print response
     echo "$resp" | jq .
 
     # Extract numbers (fallback to 0 if missing/null)
-    wager=$(echo "$resp" | jq -r '.wager // 0')
+    w=$(echo "$resp" | jq -r '.wager // 0')
     netGain=$(echo "$resp" | jq -r '.netGain // 0')
 
     # Accumulate
-    TOTAL_WAGER=$(echo "$TOTAL_WAGER + $wager" | bc -l)
+    TOTAL_WAGER=$(echo "$TOTAL_WAGER + $w" | bc -l)
     TOTAL_NET=$(echo "$TOTAL_NET + $netGain" | bc -l)
 
     echo -e "\n----------------------------------------\n"
@@ -35,7 +42,7 @@ for round in $(seq 1 100); do
 done
 
 # Final totals
-HOUSE_PROFIT=$(echo "scale=2; $TOTAL_WAGER - ($TOTAL_WAGER + $TOTAL_NET)" | bc)
+HOUSE_PROFIT=$(echo "scale=2; -1 * $TOTAL_NET" | bc)
 CUSTOMER_LOSS_PCT=$(echo "scale=2; (($HOUSE_PROFIT / $TOTAL_WAGER) * 100)" | bc)
 PAYOUT_RATIO=$(echo "scale=2; (100 - $CUSTOMER_LOSS_PCT)" | bc)
 
