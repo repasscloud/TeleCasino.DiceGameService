@@ -1,0 +1,17 @@
+name: 🧪 Test Public API (Manual Only)
+
+on:
+  workflow_dispatch:  # manual trigger only
+
+jobs:
+  run-public-api-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Make script executable
+        run: chmod +x .github/scripts/test-public-api.sh
+
+      - name: 🧪 Run Public API Test Script
+        run: .github/scripts/test-public-api.sh
